@@ -21,9 +21,15 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Fdep.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="io_func.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="fd_func.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
