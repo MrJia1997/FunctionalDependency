@@ -24,12 +24,18 @@
     <ClCompile Include="Fdep.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="TANE.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="io_func.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="fd_func.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TANE.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

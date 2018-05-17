@@ -1,46 +1,39 @@
 #include "TANE.h"
 #include <fstream>
 #include <algorithm>
+#include <iostream>
+#include<cmath>
 using namespace std;
-static string table[100000][16];
+extern vector<vector<string>> table;
 #define l L[level]
-#define eps 0
+#define eps 0 // 0~0.1 * row ÁöÑÊï¥Êï∞
 
-TANE::TANE(int row, int column)
+TANE::TANE()
 {
-	this->column = column;
-	this->row = row;
-	max_level = 100;
-	level = 1;
+	column = table[0].size();
+	row = table.size();
+	max_level = 1000;
 	shift = new int[column + 1];
 	for (int i = 0; i <= column; i++) {
 		shift[i] = 1 << i;
 	}
 	R = shift[column] - 1;
-	cplus = new int[shift[column]];
-	cplus[0] = R;
-	result = new int[shift[column]];
-	T = new int[shift[column]];
-	E = new double*[shift[column]];
-	for (int i = 0; i < column; i++) {
-		E[i] = new double[shift[column]];
-	}
-	S = new vector<int>[column];
+	cplus = new int[shift[column]]; //ÈÉΩÊòØ& ÂàùÂßãÂÄºÂ∫îËØ•‰∏∫R
+	vis = new int[shift[column]]{0}; 
+	result_vis = new int[shift[column]]{ 0 };
+	T = new int[shift[column]]{0};
+	S = new vector<int>[row/2];
+	result_right = new vector<int>[shift[column]];
 	init_pi = new map<string, vector<int>>[column];
 	pi = new vector<vector<int>>[shift[column]];
 	L = new vector<int>[max_level];
-	L[0].clear();
-	for (int i = 0; i < column; i++) {
-		L[1].push_back(shift[i]);
-	}
 }
 
 TANE::~TANE()
 {
-	delete L;
 }
 
-int CountOne(int v)//º∆À„1µƒ∏ˆ ˝
+int CountOne(int v)//Âà§Êñ≠v‰∏≠ÊúâÂ§öÂ∞ë‰∏™1ÔºåÁî®Êù•ÊØîËæÉÂâçÁºÄ
 {
 	int num = 0;
 	while (v)
@@ -51,12 +44,41 @@ int CountOne(int v)//º∆À„1µƒ∏ˆ ˝
 	return num;
 }
 
-bool TANE::Superkey(int X) {
-
-	return GetEValueOfSingle(X) <= eps;
+bool LexicoCmp(const int &a, const int &b) { //ÊãÜÊàêÂ≠óÂÖ∏Â∫è
+	int x = a, y = b;
+	while ((x&1)== (y&1))
+	{
+		x = x >> 1;
+		y = y >> 1;
+		//if (x == 0)return y > x; Ê≥®ÊÑèaÂíåb‰∏≠1ÁöÑ‰∏™Êï∞Áõ∏Âêå
+		//if (y == 0)return x > y;
+	}
+	return (x & 1) > (y & 1);
+}
+void TANE::OutputFD() {
+	int lsize = result_left.size();
+	sort(result_left.begin(), result_left.end(), LexicoCmp);
+	for (int k = 0; k < lsize; k++) {
+		int X = result_left[k];
+		sort(result_right[X].begin(), result_right[X].end());
+		int rsize = result_right[X].size();
+		for (int i = 0; i < rsize; i++) {
+			for (int j = 0; j < column; j++) {
+				if (X & shift[j]) {
+					cout << j+1 << " ";
+				}
+			}
+			cout << "-> ";
+			cout << result_right[X][i] << endl;
+		}
+	}
 }
 
-double TANE::GetExactEValue(int X, int A)
+bool TANE::Superkey(int X) {
+	return pi[X].size() == 0;
+}
+
+int TANE::GetExactEValue(int X, int A)
 {
 	int e = 0, size;
 	size = pi[X | A].size();
@@ -76,23 +98,31 @@ double TANE::GetExactEValue(int X, int A)
 	for (int i = 0; i < size; i++) {
 		T[pi[X | A][i][0]] = 0;
 	}
-	return e / row;
+	return e ;
 }
 
-double TANE::GetEValueOfSingle(int X)
+int TANE::GetEValueOfSingle(int X)
 {
 	int spi = 0, sspi = 0;
 	spi = pi[X].size();
 	for (int i = 0; i < spi; i++) {
 		sspi += pi[X][i].size();
 	}
-	return (sspi - spi) / row;
+	return (sspi - spi) ; 
 }
 
 void TANE::GetFunctionDependence()
 {
+	level = 1;
+	for (int i = 0; i < shift[column]; i++) {
+		cplus[i] = R;
+	}
+	L[0].clear();
+	for (int i = 0; i < column; i++) {
+		L[1].push_back(shift[i]);
+	}
+	StrippedInit();
 	while (!L[level].empty()) {
-		sort(L[level].begin(), L[level].end());
 		ComputeDependencies(level);
 		Prune(level);
 		GenerateNextLevel(level);
@@ -103,7 +133,6 @@ void TANE::GetFunctionDependence()
 void TANE::ComputeDependencies(int size)
 {
 	int len = l.size();
-	double exact_value = -1;
 	for (int i = 0; i < len; i++) {
 		int X = l[i];
 		for (int j = 0; j < column; j++) {
@@ -113,22 +142,29 @@ void TANE::ComputeDependencies(int size)
 			}
 		}
 	}
+	//if (level == 1)return;
 	for (int i = 0; i < len; i++) {
 		int X = l[i];
 		for (int j = 0; j < column; j++) {
 			int A = shift[j];
 			if (A &(X & cplus[X])) {
-				if (GetEValueOfSingle(X) - GetEValueOfSingle(X | A) > eps)continue;
-				if( GetEValueOfSingle(X) <= eps ||
-					(exact_value = GetExactEValue(X-A, A)) <= eps) {//X\{A}->A is valid
-					//output X-A->A
-					result[X - A] = result[X - A] | A;
+				if (X == A)continue;
+				int EX = GetEValueOfSingle(X);
+				int EXSubA = GetEValueOfSingle(X - A);
+				if (EXSubA - EX > eps)continue;
+				if (EXSubA <= eps ||
+					GetExactEValue(X-A, A) <= eps) {//X\{A}->A is valid
+					//OutputFD(X - A, A);
+					if (!result_vis[X - A]) {
+						result_left.push_back(X - A);
+						result_vis[X - A] = 1;
+					}
+					result_right[X - A].push_back(j+1);
 					cplus[X] = cplus[X] - A;
-					if (exact_value < 0)exact_value = GetExactEValue(X - A, A);
-					if (exact_value == 0) {
+					if (EXSubA == EX) {
 						for (int k = 0; k < column; k++) {
 							int B = shift[k];
-							if (B & (R - X)) {
+							if (B & cplus[X] && B & (R - X)) {
 								cplus[X] = cplus[X] - B;
 							}
 						}
@@ -142,14 +178,12 @@ void TANE::ComputeDependencies(int size)
 void TANE::Prune(int level)
 {
 	int len = l.size();
-	for (vector <int>::iterator i = l.begin(); i != l.end(); ) {
+	for (vector <int>::iterator i = l.begin(); i != l.end();) {
 		int X = *i;
 		if (!cplus[X]) {
-			vector <int>::iterator j = i + 1;
-			l.erase(i);
-			i = j;
+			i = l.erase(i);
 		}
-		if (Superkey(X)) {
+		else if (Superkey(X)) {
 			for (int j = 0; j < column; j++) {
 				int A = shift[j];
 				int state = R;
@@ -162,38 +196,50 @@ void TANE::Prune(int level)
 					}
 					if (A & state) {
 						//output X->A
+						//OutputFD(X, A);
+						if (!result_vis[X]) {
+							result_left.push_back(X);
+							result_vis[X] = 1;
+						}
+						result_right[X].push_back(j+1);
 					}
 				}
 			}
-			vector <int>::iterator j = i + 1;
-			l.erase(i);
-			i = j;
+			i = l.erase(i);
+		}
+		else {
+			i++;
 		}
 	}
 }
 
 void TANE::GenerateNextLevel(int level)
 {
-	int len, state;
+	int len, tlen, state;
 	int last = 0;
 	int next = level + 1;
 	//Prefix_Block
-	tmp.push_back(l[last]);
-	for (int i = 1; i < len; i++) {//l“—æ≠≈≈∫√–Ú
+	sort(L[level].begin(), L[level].end(), LexicoCmp);
+	L[next].clear();
+	len = l.size();
+	if (!len) return;
+	tmp.push_back(l[last]); //K
+	for (int i = 1; i < len; i++) {
 		int same = l[i] & l[last];
-		if (CountOne(same) == level - 1 && l[last] - same > same) { //”–level-1∏ˆœ‡Õ¨‘™Àÿ£¨«“≤ªÕ¨µƒ‘™Àÿ‘⁄◊Ó∫Û“ªŒª
+		if (CountOne(same) == level - 1 && l[last] - same > same) {
 			tmp.push_back(l[i]);
 		}
 		else {
-			len = tmp.size();
-			for (int i = 0; i < len; i++) { //Y
-				for (int j = i + 1; j < len; j++) {//Z
+			tlen = tmp.size();
+			for (int i = 0; i < tlen; i++) { //Y
+				for (int j = i + 1; j < tlen; j++) {//Z
 					state = tmp[i] | tmp[j];
 					StrippedProduct(tmp[i], tmp[j]);
 					for (int k = 0; k < column; k++) { //A
 						int A = shift[k];
-						if ((A & state) && find(l.begin(), l.end(), state-A) != l.end()) {
+						if ((A & state) && !vis[state] && find(l.begin(), l.end(), state-A) != l.end()) {
 							L[next].push_back(state);
+							vis[state] = 1;
 						}
 					}
 				}
@@ -203,31 +249,36 @@ void TANE::GenerateNextLevel(int level)
 			tmp.push_back(l[last]);
 		}
 	}
-	len = tmp.size();
-	for (int i = 0; i < len; i++) { //Y
-		for (int j = i + 1; j < len; j++) {//Z
+	tlen = tmp.size();
+	for (int i = 0; i < tlen; i++) { //Y
+		for (int j = i + 1; j < tlen; j++) {//Z
 			state = tmp[i] | tmp[j];//X
+			StrippedProduct(tmp[i], tmp[j]);
 			for (int k = 0; k < column; k++) { //A
 				int A = shift[k];
-				if ((A & state) && find(l.begin(), l.end(), state - A) != l.end()) {
+				if ((A & state) && !vis[state] && find(l.begin(), l.end(), state - A) != l.end()) {
 					L[next].push_back(state);
+					vis[state] = 1;
 				}
 			}
 		}
 	}
+	tmp.clear();
 }
 
 void TANE::StrippedInit()
 {
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < column; j++) {
-			init_pi[j][table[i][j]].push_back(i);
+			init_pi[j][table[i][j]].push_back(i+1);
 		}
 	}
 	map<string, vector<int>>::iterator iter;
 	for (int i = 0; i < column; i++) {
 		for (iter = init_pi[i].begin(); iter != init_pi[i].end(); iter++) {
-			pi[shift[i]].push_back(iter->second);
+			if (iter->second.size() >= 2) {
+				pi[shift[i]].push_back(iter->second);
+			}
 		}
 	}
 	for (int i = 0; i < R; i++) {
@@ -237,16 +288,16 @@ void TANE::StrippedInit()
 
 void TANE::StrippedProduct(int Y, int Z)
 {
-	int xset = Y | Z;
-	pi[xset].clear();
-	int ysize = pi[Y].size(), zsize = pi[Z].size;
+	int X = Y | Z;
+	pi[X].clear();
+	int ysize = pi[Y].size(), zsize = pi[Z].size();
 	for (int i = 0; i < ysize; i++) {
-		int size = pi[Y][i].size();
+		int size = pi[Y][i].size(); //ci
 		for (int j = 0; j < size; j++) {
-			int t = pi[Z][i][j];
-			T[t] = i;
+			int t = pi[Y][i][j];
+			T[t] = i+1;
 		}
-		S[i].clear();
+		S[i+1].clear();
 	}
 	for (int i = 0; i < zsize; i++) {
 		int size = pi[Z][i].size();
@@ -259,9 +310,9 @@ void TANE::StrippedProduct(int Y, int Z)
 		for (int j = 0; j < size; j++) {
 			int t = pi[Z][i][j];
 			if (S[T[t]].size() >= 2) {
-				pi[xset].push_back(S[T[t]]);
-				S[T[t]].clear();
+				pi[X].push_back(S[T[t]]);
 			}
+			S[T[t]].clear();
 		}
 	}
 	for (int i = 0; i < ysize; i++) {
