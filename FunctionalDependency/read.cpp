@@ -39,6 +39,7 @@ void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) 
     while (!fileIn.eof()) {
         fileIn.getline(buffer, 500);
         string s(buffer);
+		if (s == string(""))continue;
         table.push_back(specialSplit(s, ","));
     }
 

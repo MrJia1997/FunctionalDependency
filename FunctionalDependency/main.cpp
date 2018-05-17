@@ -8,8 +8,9 @@ int main() {
     string filePath;
     //cout << "Please input data file path: ";
     //cin >> filePath;
-	filePath = "test_data.txt";
+	filePath = "data.txt";
     readFromFile(filePath, table);
+	//cout << "start" << endl;
 	TANE tane;
 	tane.GetFunctionDependence();
 	tane.OutputFD();

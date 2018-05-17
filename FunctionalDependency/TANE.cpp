@@ -21,8 +21,8 @@ TANE::TANE()
 	cplus = new int[shift[column]]; //都是& 初始值应该为R
 	vis = new int[shift[column]]{0}; 
 	result_vis = new int[shift[column]]{ 0 };
-	T = new int[shift[column]]{0};
-	S = new vector<int>[row/2];
+	T = new int[row+1]{0};
+	S = new vector<int>[row+1];
 	result_right = new vector<int>[shift[column]];
 	init_pi = new map<string, vector<int>>[column];
 	pi = new vector<vector<int>>[shift[column]];
@@ -56,6 +56,7 @@ bool LexicoCmp(const int &a, const int &b) { //拆成字典序
 	return (x & 1) > (y & 1);
 }
 void TANE::OutputFD() {
+	ofstream Outfile("result.txt");
 	int lsize = result_left.size();
 	sort(result_left.begin(), result_left.end(), LexicoCmp);
 	for (int k = 0; k < lsize; k++) {
@@ -65,13 +66,14 @@ void TANE::OutputFD() {
 		for (int i = 0; i < rsize; i++) {
 			for (int j = 0; j < column; j++) {
 				if (X & shift[j]) {
-					cout << j+1 << " ";
+					Outfile << j+1 << " ";
 				}
 			}
-			cout << "-> ";
-			cout << result_right[X][i] << endl;
+			Outfile << "-> ";
+			Outfile << result_right[X][i] << endl;
 		}
 	}
+	Outfile.close();
 }
 
 bool TANE::Superkey(int X) {
@@ -121,8 +123,10 @@ void TANE::GetFunctionDependence()
 	for (int i = 0; i < column; i++) {
 		L[1].push_back(shift[i]);
 	}
+	// << 0 << endl;
 	StrippedInit();
 	while (!L[level].empty()) {
+		//cout << level << endl;
 		ComputeDependencies(level);
 		Prune(level);
 		GenerateNextLevel(level);
