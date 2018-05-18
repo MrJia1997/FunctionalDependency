@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 using namespace std;
 class TANE
@@ -24,7 +24,7 @@ private:
 	vector<int>tmp;
 	vector<int>result_left;
 	vector<int>*result_right;//结果储存右端,通过左端查找
-	map<string, vector<int>>*init_pi; //一个属性的等价类
+	unordered_map<string, vector<int>>*init_pi; //一个属性的等价类
 	vector<vector<int>>*pi; //stripped 等价类
 	void ComputeDependencies(int level);
 	void Prune(int level);
