@@ -18,7 +18,7 @@ TANE::TANE()
 		shift[i] = 1 << i;
 	}
 	R = shift[column] - 1;
-	cplus = new int[shift[column]]; //都是& 初始值应该为R
+	cplus = new int[shift[column]]{0};
 	vis = new int[shift[column]]{0}; 
 	result_vis = new int[shift[column]]{ 0 };
 	T = new int[shift[column] > row+1 ? shift[column]:row +1]{0};
@@ -31,6 +31,16 @@ TANE::TANE()
 
 TANE::~TANE()
 {
+	delete []shift;
+	delete []cplus;
+	delete []vis;
+	delete []result_vis;
+	delete []T;
+	delete []S;
+	delete []result_right;
+	delete []init_pi;
+	delete []pi;
+	delete []L;
 }
 
 int CountOne(int v)//判断v中有多少个1，用来比较前缀
@@ -55,6 +65,7 @@ bool LexicoCmp(const int &a, const int &b) { //拆成字典序
 	}
 	return (x & 1) > (y & 1);
 }
+
 bool LexicoCmpOut(const int &a, const int &b) { //拆成字典序
 	int x = a, y = b;
 	while ((x & 1) == (y & 1))
@@ -76,6 +87,7 @@ void TANE::OutputFD() {
 		sort(result_right[X].begin(), result_right[X].end());
 		int rsize = result_right[X].size();
 		for (int i = 0; i < rsize; i++) {
+			if (i > 0 && result_right[X][i] == result_right[X][i - 1]) continue;
 			for (int j = 0; j < column; j++) {
 				if (X & shift[j]) {
 					Outfile << j+1 << " ";
@@ -130,8 +142,9 @@ void TANE::GetFunctionDependence()
 {
 	level = 1;
 	for (int i = 0; i < shift[column]; i++) {
-		cplus[i] = R;
+		cplus[i] = 0;
 	}
+	cplus[0] = R;
 	L[0].clear();
 	for (int i = 0; i < column; i++) {
 		L[1].push_back(shift[i]);
@@ -154,7 +167,15 @@ void TANE::ComputeDependencies(int size)
 	int len = l.size();
 	for (int i = 0; i < len; i++) {
 		int X = l[i];
-		for (int j = 0; j < column; j++) {
+		int j;
+		for (j = 0; j < column; j++) {
+			int A = shift[j];
+			if (A & X) {
+				cplus[X] = cplus[X - A];
+				break;
+			}
+		}
+		for (; j < column; j++) {
 			int A = shift[j];
 			if (A & X) {
 				cplus[X] = cplus[X] & cplus[X - A];
@@ -201,8 +222,9 @@ void TANE::Prune(int level)
 		int X = *i;
 		if (!cplus[X]) {
 			i = l.erase(i);
+			continue;
 		}
-		else if (Superkey(X)) {
+		if (Superkey(X)) {
 			for (int j = 0; j < column; j++) {
 				int A = shift[j];
 				if (A & (cplus[X] - (cplus[X]&X))) {
@@ -231,11 +253,10 @@ void TANE::Prune(int level)
 					}
 				}
 			}
-			i = l.erase(i);
+			//i = l.erase(i);
+			//continue;
 		}
-		else {
-			i++;
-		}
+		i++;
 	}
 }
 
