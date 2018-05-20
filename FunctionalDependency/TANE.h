@@ -14,7 +14,7 @@ private:
 	int row, column;
 	int level, maxlevel;
 	int R;
-	int *powerTow; //powerTow[i]2^i;
+	int *powerTow; //powerTo w[i]2^i;
 	int *cplus;
 	int *T;
 	int *levelIn; //attr set i in which level

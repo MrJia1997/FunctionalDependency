@@ -2,6 +2,7 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
+#include <thread>
 #include <cmath>
 #include <ctime>
 using namespace std;
@@ -9,7 +10,7 @@ extern vector<vector<string>> table;
 #define l L[level]
 #define eps 0 // 0~0.1 * row 的整数
 vector<int> *element; //element of bitset i 
-TANE::TANE()
+TANE::TANE() 
 {
 	column = table[0].size();
 	row = table.size();
@@ -22,10 +23,10 @@ TANE::TANE()
 	cplus = new int[powerTow[column]]{ 0 };
 	levelIn = new int[powerTow[column]]{ 0 };
 	T = new int[powerTow[column] > row + 1 ? powerTow[column] : row + 1]{ 0 };
-	fdRight = new int[powerTow[column]];
-	for (int i = 0; i < powerTow[column]; i++) {
+    fdRight = new int[powerTow[column]]{ 0 };
+	/*for (int i = 0; i < powerTow[column]; i++) {
 		fdRight[i] = 0;
-	}
+	}*/
 	fdLeftVis = new int[powerTow[column]]{0};
 	S = new vector<int>[row + 1];
 	L = new vector<int>[maxlevel];
