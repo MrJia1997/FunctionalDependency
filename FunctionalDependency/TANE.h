@@ -21,7 +21,7 @@ private:
 	int *fdRight;
 	int *fdLeftVis;
 	vector<int> fdLeft;
-	vector<int> *L;
+    vector<int> *L;
 	vector<int> *S;
 	vector<int> tmp;
 	vector<vector<int>> *pi;
