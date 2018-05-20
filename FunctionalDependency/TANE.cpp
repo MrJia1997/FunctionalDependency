@@ -9,41 +9,62 @@ using namespace std;
 extern vector<vector<string>> table;
 #define l L[level]
 #define eps 0
+#define THREAD_NUMBER 4
 vector<int> *element; //element of bitset i 
-TANE::TANE() 
+thread t[THREAD_NUMBER];
+
+TANE::TANE()
 {
-	column = table[0].size();
-	row = table.size();
-	maxlevel = 10;
-	powerTow = new int[column + 1]{ 0 };
-	for (int i = 0; i <= column; i++) {
-		powerTow[i] = 1 << i;
-	}
-	R = powerTow[column] - 1;
-	cplus = new int[powerTow[column]]{ 0 };
-	levelIn = new int[powerTow[column]]{ 0 };
-	T = new int[powerTow[column] > row + 1 ? powerTow[column] : row + 1]{ 0 };
+    column = table[0].size();
+    row = table.size();
+    maxlevel = 10;
+    powerTow = new int[column + 1]{ 0 };
+    for (int i = 0; i <= column; i++) {
+        powerTow[i] = 1 << i;
+    }
+    R = powerTow[column] - 1;
+    cplus = new int[powerTow[column]]{ 0 };
+    levelIn = new int[powerTow[column]]{ 0 };
+    T = new int[powerTow[column] > row + 1 ? powerTow[column] : row + 1]{ 0 };
     fdRight = new int[powerTow[column]]{ 0 };
-	/*for (int i = 0; i < powerTow[column]; i++) {
-		fdRight[i] = 0;
+    fdLeftVis = new int[powerTow[column]]{ 0 };
+    S = new vector<int>[row + 1];
+    L = new vector<int>[maxlevel];
+    element = new vector<int>[powerTow[column]];
+    pi = new vector<vector<int>>[powerTow[column]];
+    piStart = new unordered_map<string, vector<int>>[powerTow[column]];
+    
+    // 尝试使用多线程优化
+    for (int i = 0; i < THREAD_NUMBER; i++) {
+        t[i] = thread([&](int start, int end) {
+            for (int j = start; j < end; j++) {
+                int temp = j, count = 0;
+                while (temp)
+                {
+                    if (temp & 1) {
+                        element[j].push_back(powerTow[count]);
+                    }
+                    count++;
+                    temp >>= 1;
+                }
+            }
+        }, (powerTow[column] / THREAD_NUMBER) * i, (powerTow[column] / THREAD_NUMBER) * (i + 1));
+    }
+    for (int i = 0; i < THREAD_NUMBER; i++) {
+        t[i].join();
+    }
+
+    /*for (int i = 0; i < powerTow[column]; i++) {
+        int t = i, count = 0;
+        while (t)
+        {
+            if (t & 1) {
+                element[i].push_back(powerTow[count]);
+            }
+            count++;
+            t = t >> 1;
+        }
 	}*/
-	fdLeftVis = new int[powerTow[column]]{0};
-	S = new vector<int>[row + 1];
-	L = new vector<int>[maxlevel];
-	element = new vector<int>[powerTow[column]];
-	for (int i = 0; i < powerTow[column]; i++) {
-		int t = i, count = 0;
-		while (t)
-		{
-			if (t & 1) {
-				element[i].push_back(powerTow[count]);
-			}
-			count++;
-			t = t >> 1;
-		}
-	}
-	pi = new vector<vector<int>>[powerTow[column]];
-	piStart = new unordered_map<string, vector<int>>[powerTow[column]];
 }
 
 TANE::~TANE()

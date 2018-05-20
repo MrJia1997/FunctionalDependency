@@ -19,5 +19,6 @@ int main() {
 	tane.OutputFD();
 	ed = clock();
 	cout << (ed - st) * 1.0 / CLOCKS_PER_SEC << endl;
+    system("pause");
     return 0;
 }
