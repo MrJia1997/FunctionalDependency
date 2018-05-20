@@ -8,7 +8,7 @@
 using namespace std;
 extern vector<vector<string>> table;
 #define l L[level]
-#define eps 0 // 0~0.1 * row 的整数
+#define eps 0
 vector<int> *element; //element of bitset i 
 TANE::TANE() 
 {
@@ -150,7 +150,7 @@ void TANE::ComputeDependencies(int level)
 			if (EXsubA - EX > eps)continue;
 			if (EXsubA <= eps ||
 				GetExactEValue(XsubA, A) <= eps) {//X\{A}->A is valid
-												  //OutputFD(X - A, A);
+				//OutputFD(X - A, A);
 				if (!fdLeftVis[XsubA]) {
 					fdLeft.push_back(XsubA);
 					fdLeftVis[XsubA] = 1;
@@ -183,12 +183,12 @@ void TANE::Prune(int level)
 			int result = cplus[X] - (cplus[X] & X);
 			int xsize = element[X].size(), rsize = element[result].size();
 			for (int j = 0; j < rsize; j++) {
-				int A = element[result][j], end = R;
+				int A = element[result][j];
 				for (int k = 0; k < xsize; k++) {
 					int B = element[X][k];
-					end = end & cplus[(X | A) - B];
+					A = A & cplus[(X | A) - B];
 				}
-				if (A & end) {
+				if (A) {
 					//output X->A
 					if (!fdLeftVis[X]) {
 						fdLeft.push_back(X);
@@ -222,7 +222,6 @@ void TANE::GenerateNextLevel(int level)
 			for (int j = 0; j < tsize; j++) { //Y
 				for (int k = j + 1; k < tsize; k++) {//Z
 					X = tmp[j] | tmp[k];
-					StrippedProduct(tmp[j], tmp[k]);
 					int flag = 1, xsize = element[X].size();
 					for (int z = 0; z < xsize; z++) {//A
 						if (levelIn[X - element[X][z]] != level) {
@@ -233,6 +232,7 @@ void TANE::GenerateNextLevel(int level)
 					if (flag && !levelIn[X]) {
 						L[next].push_back(X);
 						levelIn[X] = next;
+						StrippedProduct(tmp[j], tmp[k]);
 					}
 				}
 			}
@@ -245,7 +245,6 @@ void TANE::GenerateNextLevel(int level)
 	for (int j = 0; j < tsize; j++) { //Y
 		for (int k = j + 1; k < tsize; k++) {//Z
 			X = tmp[j] | tmp[k];
-			StrippedProduct(tmp[j], tmp[k]);
 			int flag = 1, xsize = element[X].size();
 			for (int z = 0; z < xsize; z++) {//A
 				if (levelIn[X - element[X][z]] != level) {
@@ -256,6 +255,7 @@ void TANE::GenerateNextLevel(int level)
 			if (flag && !levelIn[X]) {
 				L[next].push_back(X);
 				levelIn[X] = next;
+				StrippedProduct(tmp[j], tmp[k]);
 			}
 		}
 	}
@@ -265,13 +265,13 @@ void TANE::GenerateNextLevel(int level)
 void TANE::StrippedProduct(int Y, int Z)
 {
 	int X = Y | Z;
+	if (pi[Z].size() < pi[Y].size())swap(Y, Z);
 	pi[X].clear();
 	int ysize = pi[Y].size(), zsize = pi[Z].size();
 	for (int i = 0; i < ysize; i++) {
 		int suci = i + 1, size = pi[Y][i].size(); //ci
 		for (int j = 0; j < size; j++) {
-			int t = pi[Y][i][j];
-			T[t] = suci;
+			T[pi[Y][i][j]] = suci;
 		}
 		S[suci].clear();
 	}
@@ -294,8 +294,7 @@ void TANE::StrippedProduct(int Y, int Z)
 	for (int i = 0; i < ysize; i++) {
 		int size = pi[Y][i].size();
 		for (int j = 0; j < size; j++) {
-			int t = pi[Y][i][j];
-			T[t] = 0;
+			T[pi[Y][i][j]] = 0;
 		}
 	}
 }
@@ -325,8 +324,7 @@ int TANE::GetExactEValue(int X, int A)
 
 int TANE::GetEValueOfSingle(int X)
 {
-	int spi = 0, sspi = 0;
-	spi = pi[X].size();
+	int spi = pi[X].size(), sspi = 0;
 	for (int i = 0; i < spi; i++) {
 		sspi += pi[X][i].size();
 	}
