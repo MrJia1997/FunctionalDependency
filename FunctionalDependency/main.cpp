@@ -1,10 +1,10 @@
 #include "io_func.h"
-#include "fd_func.h"
 #include <iostream>
 #include <ctime>
 #include "TANE.h"
 using namespace std;
-vector<vector<string>> table;
+vector<vector<string>> table(100000);
+
 int main() {
     string filePath;
 	clock_t st, ed;
@@ -19,6 +19,5 @@ int main() {
 	tane.OutputFD();
 	ed = clock();
 	cout << (ed - st) * 1.0 / CLOCKS_PER_SEC << endl;
-    //DFD(table);
     return 0;
 }

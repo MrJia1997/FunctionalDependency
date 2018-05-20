@@ -19,13 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Fdep.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="read.cpp" />
     <ClCompile Include="TANE.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fd_func.h" />
     <ClInclude Include="io_func.h" />
     <ClInclude Include="TANE.h" />
   </ItemGroup>

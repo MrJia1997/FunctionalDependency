@@ -2,26 +2,27 @@
 
 #include <iostream>
 #include <fstream>
+#include <ctime>
 
 using namespace std;
 
-vector<string> specialSplit(const string &s, const char* delim = " ") {
-    // Source: http://www.cplusplus.com/faq/sequences/strings/split/#string-find_first_of
+void specialSplit(vector<string> &res, string &s) {
+    // Source: http://www.cplusplus.com/faq/sequences/strings/split/
+    res.clear();
     int current = 0, next = -1;
     int tempCur = 0; // tempCur to fix input bug
-    vector<string> res;
+    int len = s.length();
     do
     {
-        next = s.find_first_of(delim, tempCur);
+        next = s.find(",", tempCur);
         tempCur = next + 1;
-        if (s[next + 1] != ' ') {
+        if (next == string::npos || s[next + 1] != ' ') {
             res.push_back(s.substr(current, next - current));
             current = next + 1;
         }
 
     } while (next != string::npos);
 
-    return res;
 }
 
 void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) {
@@ -35,19 +36,18 @@ void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) 
         exit(1);
     }
 
+    vector<string> res(20);
+    string s;
     char buffer[512];
+
     while (!fileIn.eof()) {
         fileIn.getline(buffer, 500);
-        string s(buffer);
-		if (s == string(""))continue;
-        table.push_back(specialSplit(s, ","));
+        s = string(buffer);
+        if (s == "")
+            continue;
+        specialSplit(res, s);
+        table.push_back(res);
     }
-
-    for (auto t : table) {
-        if (t.size() > 15) {
-            cout << t.size() << endl;
-        }
-    }
-
+    
     fileIn.close();
 }
