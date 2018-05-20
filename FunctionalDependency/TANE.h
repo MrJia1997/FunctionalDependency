@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -11,28 +11,30 @@ public:
 	void GetFunctionDependence();
 	void OutputFD();
 private:
-	int max_level, level;
-	int column, row;
-	int R; //ËùÓĞÊôĞÔ = 2^column - 1
-	int *cplus; //rhs+
-	int *shift; //2^i
+	int row, column;
+	int level, maxlevel;
+	int R;
+	int *powerTow; //powerTow[i]2^i;
+	int *cplus;
 	int *T;
-	int *vis; //ÅĞ¶ÏLÖĞÊÇ·ñÖØ¸´³öÏÖÄ³¼¯ºÏ
-	int *result_vis;
-	vector<int>*L; //ÓÃintÀ´±íÊ¾¼¯ºÏ,µÚiÎ»µÄ01¾ö¶¨µÚi¸öÊôĞÔÊÇ·ñÔÚ¼¯ºÏÄÚ
-	vector<int>*S;
-	vector<int>tmp;
-	vector<int>result_left;
-	vector<int>*result_right;//½á¹û´¢´æÓÒ¶Ë,Í¨¹ı×ó¶Ë²éÕÒ
-	unordered_map<string, vector<int>>*init_pi; //Ò»¸öÊôĞÔµÄµÈ¼ÛÀà
-	vector<vector<int>>*pi; //stripped µÈ¼ÛÀà
+	int *levelIn; //attr set i in which level
+	int *fdRight;
+	int *fdLeftVis;
+	vector<int> fdLeft;
+	vector<int> *L;
+	vector<int> *S;
+	vector<int> tmp;
+	vector<vector<int>> *pi;
+	unordered_map<string, vector<int>> *piStart;
+	void StrippedInit();
 	void ComputeDependencies(int level);
 	void Prune(int level);
 	void GenerateNextLevel(int level);
-	void StrippedInit();
-	void StrippedProduct(int Y,int Z);
-	int GetExactEValue(int X, int A); //E(X) = e(x)*row ±£Ö¤ÎªÕûÊı 
+	void StrippedProduct(int Y, int Z);
+	int GetExactEValue(int X, int A); //E(X->A) = e(x->a)*row 
 	int GetEValueOfSingle(int X);
 	bool Superkey(int X);
+	int CountOne(int v);
+	//bool LexicoCmp(const int &a, const int &b);
 };
 
