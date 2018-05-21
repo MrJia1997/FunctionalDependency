@@ -9,7 +9,7 @@
 #include <ctime>
 using namespace std;
 extern vector<vector<string>> table;
-
+vector<bool> lVisited;
 
 #define l L[level]
 #define eps 0
@@ -26,6 +26,7 @@ TANE::TANE()
     for (int i = 0; i <= column; i++) {
         powerTow[i] = 1 << i;
     }
+    
     R = powerTow[column] - 1;
     cplus = new int[powerTow[column]]{ 0 };
     levelIn = new int[powerTow[column]]{ 0 };
@@ -35,6 +36,7 @@ TANE::TANE()
     S = new vector<int>[row + 1];
     L = new vector<int>[maxlevel];
     element = new vector<int>[powerTow[column]];
+    lVisited.assign(powerTow[column], false);
     pi = new vector<vector<int>>[powerTow[column]];
     piStart = new unordered_map<string, vector<int>>[powerTow[column]];
     
@@ -110,7 +112,7 @@ struct LexicoCmp {
 
 void TANE::GetFunctionDependence()
 {
-	clock_t st, ed, c1, c2;
+	//clock_t st, ed;
 	level = 1;
 	L[0].clear();
 	cplus[0] = R;
@@ -121,17 +123,13 @@ void TANE::GetFunctionDependence()
 	StrippedInit();
 	while (!L[level].empty()) {
         cout << level << " " << L[level].size() << endl;
-		st = clock();
+		//st = clock();
 		ComputeDependencies(level);
-        c1 = clock();
-        cout << (c1 - st) * 1.0 / CLOCKS_PER_SEC << endl;
 		Prune(level);
-        c2 = clock();
-        cout << (c2 - c1) * 1.0 / CLOCKS_PER_SEC << endl;
 		GenerateNextLevel(level);
 		level++;
-		ed = clock();
-		cout << (ed - c2) * 1.0 / CLOCKS_PER_SEC << endl;
+        //ed = clock();
+		//cout << (ed - st) * 1.0 / CLOCKS_PER_SEC << endl;
 	}
 }
 
@@ -143,12 +141,12 @@ void TANE::OutputFD()
 	for (int k = 0; k < lsize; k++) {
 		int X = fdLeft[k], A = fdRight[X];
 		int xsize = element[X].size(), asize = element[A].size();
-		for (int i = 0; i < asize; i++) {
-			for (int j = 0; j < xsize; j++) {
-					Outfile << log2(element[X][j])+1 << " ";
+		for (auto &a : element[A]) {
+			for (auto &x : element[X]) {
+					Outfile << log2(x)+1 << " ";
 			}
 			Outfile << "-> ";
-			Outfile << log2(element[A][i])+1 << endl;
+			Outfile << log2(a)+1 << endl;
 		}
 	}
 	Outfile.close();
@@ -254,8 +252,8 @@ void TANE::GenerateNextLevel(int level)
 	// sort(l.begin(), l.end(), LexicoCmp());
 	L[next].clear();
     tmp.push_back(l[last]);
-    vector<bool> visited(powerTow[column], false);
-    shared_mutex m_;
+    
+    lVisited.assign(powerTow[column], false);
 
     for (int i = 1; i < lsize; i++) {
 		int same = l[i] & l[last];
@@ -264,79 +262,40 @@ void TANE::GenerateNextLevel(int level)
 		}
 		else {
 			tsize = tmp.size();
-            if (tsize > THREAD_NUMBER) {
-                // Try to multi thread
-                for (int th = 0; th < THREAD_NUMBER; th++) {
-                    t[th] = thread([&, this](int s, int e) {
-                        for (int j = s; j < e; j++) { //Y
-                            for (int k = j + 1; k < tsize; k++) {//Z
-                                shared_lock<shared_mutex> readLock(m_);
-                                int X = tmp[j] | tmp[k];
-                                if (visited[X] == true)
-                                    continue;
-                                int flag = 1, xsize = element[X].size();
-                                for (int z = 0; z < xsize; z++) {//A
-                                    if (levelIn[X - element[X][z]] != level) {
-                                        flag = 0;
-                                        break;
-                                    }
-                                }
-                                readLock.unlock();
-
-                                unique_lock<shared_mutex> writeLock(m_);
-                                visited[X] = true;
-                                if (flag && !levelIn[X]) {
-                                    L[next].push_back(X);
-                                    levelIn[X] = next;
-                                    StrippedProduct(tmp[j], tmp[k]);
-                                }
-                                writeLock.unlock();
-                            }
-                        }
-                    }, tsize * th * th / (THREAD_NUMBER * THREAD_NUMBER),
-                       tsize * (th + 1) * (th + 1) / (THREAD_NUMBER * THREAD_NUMBER));
-                }
-                for (int th = 0; th < THREAD_NUMBER; th++) {
-                    t[th].join();
-                }
-            }
-            else {
-                for (int j = 0; j < tsize; j++) { //Y
-                	for (int k = j + 1; k < tsize; k++) {//Z
-                		int X = tmp[j] | tmp[k];
-                        if (visited[X] == true)
-                            continue;
-                        visited[X] = true;
-                		int flag = 1, xsize = element[X].size();
-                		for (int z = 0; z < xsize; z++) {//A
-                			if (levelIn[X - element[X][z]] != level) {
-                				flag = 0;
-                				break;
-                			}
+            for (int j = 0; j < tsize; j++) { //Y
+                for (int k = j + 1; k < tsize; k++) {//Z
+                	int X = tmp[j] | tmp[k];
+                    if (lVisited[X] == true)
+                        continue;
+                    lVisited[X] = true;
+                	int flag = 1, xsize = element[X].size();
+                	for (int z = 0; z < xsize; z++) {//A
+                		if (levelIn[X - element[X][z]] != level) {
+                			flag = 0;
+                			break;
                 		}
-                		if (flag && !levelIn[X]) {
-                			L[next].push_back(X);
-                			levelIn[X] = next;
-                			StrippedProduct(tmp[j], tmp[k]);
-                		}
+                	}
+                	if (flag && !levelIn[X]) {
+                		L[next].push_back(X);
+                		levelIn[X] = next;
+                		StrippedProduct(tmp[j], tmp[k]);
                 	}
                 }
             }
-			
+
 			tmp.clear();
 			last = i;
 			tmp.push_back(l[last]);
 		}
 	}
 
-
 	tsize = tmp.size();
 	for (int j = 0; j < tsize; j++) { //Y
 		for (int k = j + 1; k < tsize; k++) {//Z
 			int X = tmp[j] | tmp[k];
-            if (visited[X] == true)
+            if (lVisited[X] == true)
                 continue;
-            visited[X] = true;
+            lVisited[X] = true;
 			int flag = 1, xsize = element[X].size();
 			for (int z = 0; z < xsize; z++) {//A
 				if (levelIn[X - element[X][z]] != level) {
@@ -353,13 +312,11 @@ void TANE::GenerateNextLevel(int level)
 	}
 
 	tmp.clear();
-
-    std::sort(L[next].begin(), L[next].end(), LexicoCmp());
 }
 
 void TANE::StrippedProduct(int Y, int Z)
 {
-	int X = Y | Z;
+    int X = Y | Z;
 	if (pi[Z].size() < pi[Y].size()) swap(Y, Z);
 	pi[X].clear();
 	int ysize = pi[Y].size(), zsize = pi[Z].size();
@@ -396,7 +353,7 @@ void TANE::StrippedProduct(int Y, int Z)
 
 int TANE::GetExactEValue(int X, int A)
 {
-	int e = 0, size;
+    int e = 0, size;
 	int XA = X | A;
 	size = pi[XA].size();
 	for (int i = 0; i < size; i++) {
@@ -414,6 +371,7 @@ int TANE::GetExactEValue(int X, int A)
 	for (int i = 0; i < size; i++) {
 		T[pi[XA][i][0]] = 0;
 	}
+
 	return e;
 }
 
