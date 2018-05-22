@@ -29,6 +29,7 @@ TANE::TANE()
     
     R = powerTow[column] - 1;
     cplus = new int[powerTow[column]]{ 0 };
+	cplusVis = new int[powerTow[column]]{ 0 };
     levelIn = new int[powerTow[column]]{ 0 };
     T = new int[powerTow[column] > row + 1 ? powerTow[column] : row + 1]{ 0 };
     fdRight = new int[powerTow[column]]{ 0 };
@@ -36,10 +37,8 @@ TANE::TANE()
     S = new vector<int>[row + 1];
     L = new vector<int>[maxlevel];
     element = new vector<int>[powerTow[column]];
-    lVisited.assign(powerTow[column], false);
     pi = new vector<vector<int>>[powerTow[column]];
     piStart = new unordered_map<string, vector<int>>[powerTow[column]];
-    
     // Try to use multithread
     for (int th = 0; th < THREAD_NUMBER; th++) {
         t[th] = thread([&](int s, int e) {
@@ -59,18 +58,6 @@ TANE::TANE()
     for (int i = 0; i < THREAD_NUMBER; i++) {
         t[i].join();
     }
-
-    /*for (int i = 0; i < powerTow[column]; i++) {
-        int t = i, count = 0;
-        while (t)
-        {
-            if (t & 1) {
-                element[i].push_back(powerTow[count]);
-            }
-            count++;
-            t = t >> 1;
-        }
-	}*/
 }
 
 TANE::~TANE()
@@ -85,18 +72,8 @@ TANE::~TANE()
 	delete []cplus; 
 	delete []levelIn;
 	delete []T;
+	delete []cplusVis;
 }
-
-//static bool LexicoCmp(const int & a, const int & b)
-//{
-//	int size = element[a].size() < element[b].size() ? element[a].size() : element[b].size();
-//	for (int i = 0; i < size; i++) {
-//		if (element[a][i] == element[b][i]) continue;
-//		return element[a][i] < element[b][i];
-//	}
-//	return element[a].size() < element[b].size();
-//	// return a < b;
-//}
 
 struct LexicoCmp {
     bool operator() (const int & a, const int & b)
@@ -112,7 +89,6 @@ struct LexicoCmp {
 
 void TANE::GetFunctionDependence()
 {
-	//clock_t st, ed;
 	level = 1;
 	L[0].clear();
 	cplus[0] = R;
@@ -180,6 +156,7 @@ void TANE::ComputeDependencies(int level)
 			end = end & cplus[X - element[X][j]];
 		}
 		cplus[X] = end;
+		cplusVis[X] = 1;
 	}
 	for (int i = 0; i < lsize; i++) {
 		int X = l[i], result = X & cplus[X], rsize = element[result].size();
@@ -225,8 +202,9 @@ void TANE::Prune(int level)
 			for (int j = 0; j < rsize; j++) {
 				int A = element[result][j];
 				for (int k = 0; k < xsize; k++) {
-					int B = element[X][k];
-					A = A & cplus[(X | A) - B];
+					int B = element[X][k], C = (X | A) - B;
+					if (!cplusVis[C])A = A & GetCPlus(C);
+					else A = A & cplus[(X | A) - B];
 				}
 				if (A) {
 					//output X->A
@@ -237,9 +215,9 @@ void TANE::Prune(int level)
 					fdRight[X] = fdRight[X] | A;
 				}
 			}
-			//i = l.erase(i);
-			//levelIn[X] = 0;
-			//continue;
+			i = l.erase(i);
+			levelIn[X] = 0;
+			continue;
 		}
 		i++;
 	}
@@ -265,9 +243,6 @@ void TANE::GenerateNextLevel(int level)
             for (int j = 0; j < tsize; j++) { //Y
                 for (int k = j + 1; k < tsize; k++) {//Z
                 	int X = tmp[j] | tmp[k];
-                    if (lVisited[X] == true)
-                        continue;
-                    lVisited[X] = true;
                 	int flag = 1, xsize = element[X].size();
                 	for (int z = 0; z < xsize; z++) {//A
                 		if (levelIn[X - element[X][z]] != level) {
@@ -293,9 +268,6 @@ void TANE::GenerateNextLevel(int level)
 	for (int j = 0; j < tsize; j++) { //Y
 		for (int k = j + 1; k < tsize; k++) {//Z
 			int X = tmp[j] | tmp[k];
-            if (lVisited[X] == true)
-                continue;
-            lVisited[X] = true;
 			int flag = 1, xsize = element[X].size();
 			for (int z = 0; z < xsize; z++) {//A
 				if (levelIn[X - element[X][z]] != level) {
@@ -392,5 +364,18 @@ bool TANE::Superkey(int X)
 int TANE::CountOne(int v)
 {
 	return element[v].size();
+}
+
+int TANE::GetCPlus(int X)
+{
+	int xsize = element[X].size(), end = R, result;
+	for (int j = 0; j < xsize; j++) { // A
+		result = X - element[X][j];
+		if (cplusVis[result])end = end & cplus[result];
+		else end = end & GetCPlus(X - element[X][j]);
+	}
+	cplus[X] = end;
+	cplusVis[X] = 1;
+	return cplus[X];
 }
 

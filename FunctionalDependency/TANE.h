@@ -20,6 +20,7 @@ private:
 	int *levelIn; //attr set i in which level
 	int *fdRight;
 	int *fdLeftVis;
+	int *cplusVis;
 	vector<int> fdLeft;
     vector<int> *L;
 	vector<int> *S;
@@ -35,6 +36,7 @@ private:
 	int GetEValueOfSingle(int X);
 	bool Superkey(int X);
 	int CountOne(int v);
-	//bool LexicoCmp(const int &a, const int &b);
+	int GetCPlus(int X);
 };
+
 
