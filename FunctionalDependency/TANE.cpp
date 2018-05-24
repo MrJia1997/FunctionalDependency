@@ -9,7 +9,7 @@
 #include <ctime>
 using namespace std;
 extern vector<vector<string>> table;
-vector<bool> lVisited;
+// vector<bool> lVisited;
 
 #define l L[level]
 #define eps 0
@@ -230,8 +230,6 @@ void TANE::GenerateNextLevel(int level)
 	// sort(l.begin(), l.end(), LexicoCmp());
 	L[next].clear();
     tmp.push_back(l[last]);
-    
-    lVisited.assign(powerTow[column], false);
 
     for (int i = 1; i < lsize; i++) {
 		int same = l[i] & l[last];
