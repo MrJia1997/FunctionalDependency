@@ -1,9 +1,9 @@
 #include "io_func.h"
 
 #include <iostream>
-#include <thread>
-#include <shared_mutex>
-#include <mutex>
+//#include <thread>
+//#include <shared_mutex>
+//#include <mutex>
 #include <fstream>
 #include <ctime>
 
@@ -41,7 +41,7 @@ void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) 
         exit(1);
     }
 
-    thread t[THREAD_NUMBER];
+    /*thread t[THREAD_NUMBER];
     vector<string> res[THREAD_NUMBER];
     for (int i = 0; i < THREAD_NUMBER; i++) {
         res[i] = vector<string>(20);
@@ -74,7 +74,23 @@ void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) 
 
     for (int th = 0; th < THREAD_NUMBER; th++) {
         t[th].join();
-    }
+    }*/
+
+    vector<string> res;
+    string s;
+    char buffer[512];
     
+    while (!fileIn.eof()) {
+        fileIn.getline(buffer, 500);
+
+        s = string(buffer);
+        if (s == "") {
+            continue;
+        }
+        specialSplit(res, s);
+
+        table.push_back(res);
+    }
+
     fileIn.close();
 }
