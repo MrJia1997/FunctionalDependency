@@ -16,14 +16,14 @@ private:
 	int R;
 	int *powerTow; //powerTo w[i]2^i;
 	int *cplus;
-	int *T;
+	int **T;
 	int *levelIn; //attr set i in which level
 	int *fdRight;
 	int *fdLeftVis;
 	int *cplusVis;
 	vector<int> fdLeft;
     vector<int> *L;
-	vector<int> *S;
+	vector<int> **S;
 	vector<int> tmp;
 	vector<vector<int>> *pi;
 	unordered_map<string, vector<int>> *piStart;
@@ -31,7 +31,7 @@ private:
 	void ComputeDependencies(int level);
 	void Prune(int level);
 	void GenerateNextLevel(int level);
-	void StrippedProduct(int Y, int Z);
+	void StrippedProduct(int Y, int Z, int th);
 	int GetExactEValue(int X, int A); //E(X->A) = e(x->a)*row 
 	int GetEValueOfSingle(int X);
 	bool Superkey(int X);

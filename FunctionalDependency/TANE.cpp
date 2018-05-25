@@ -31,10 +31,17 @@ TANE::TANE()
     cplus = new int[powerTow[column]]{ 0 };
 	cplusVis = new int[powerTow[column]]{ 0 };
     levelIn = new int[powerTow[column]]{ 0 };
-    T = new int[powerTow[column] > row + 1 ? powerTow[column] : row + 1]{ 0 };
+
+    int tsize = powerTow[column] > row + 1 ? powerTow[column] : row + 1;
+    T = new int*[THREAD_NUMBER];
+    S = new vector<int>*[THREAD_NUMBER];
+    for (int i = 0; i < THREAD_NUMBER; i++) {
+        T[i] = new int[tsize]{ 0 };
+        S[i] = new vector<int>[row + 1];
+    }
+    
     fdRight = new int[powerTow[column]]{ 0 };
     fdLeftVis = new int[powerTow[column]]{ 0 };
-    S = new vector<int>[row + 1];
     L = new vector<int>[maxlevel];
     element = new vector<int>[powerTow[column]];
     pi = new vector<vector<int>>[powerTow[column]];
@@ -67,11 +74,17 @@ TANE::~TANE()
 	delete []element;
 	delete []L;
 	delete []fdRight;
-	delete []S;
 	delete []powerTow;
 	delete []cplus; 
 	delete []levelIn;
-	delete []T;
+	
+    for (int i = 0; i < 4; i++) {
+        delete []T[i];
+        delete []S[i];
+    }
+    delete []T;
+    delete []S;
+
 	delete []cplusVis;
 }
 
@@ -230,6 +243,8 @@ void TANE::GenerateNextLevel(int level)
 	// sort(l.begin(), l.end(), LexicoCmp());
 	L[next].clear();
     tmp.push_back(l[last]);
+    
+    vector<int> tempL[THREAD_NUMBER];
 
     for (int i = 1; i < lsize; i++) {
 		int same = l[i] & l[last];
@@ -238,23 +253,52 @@ void TANE::GenerateNextLevel(int level)
 		}
 		else {
 			tsize = tmp.size();
-            for (int j = 0; j < tsize; j++) { //Y
-                for (int k = j + 1; k < tsize; k++) {//Z
-                	int X = tmp[j] | tmp[k];
-                	int flag = 1, xsize = element[X].size();
-                	for (int z = 0; z < xsize; z++) {//A
-                		if (levelIn[X - element[X][z]] != level) {
-                			flag = 0;
-                			break;
-                		}
-                	}
-                	if (flag && !levelIn[X]) {
-                		L[next].push_back(X);
-                		levelIn[X] = next;
-                		StrippedProduct(tmp[j], tmp[k]);
-                	}
-                }
+            
+            for (int th = 0; th < THREAD_NUMBER; th++) {
+                t[th] = thread([&, this](int st, int ed, int th) {
+                    for (int j = st; j < ed; j++) { //Y
+                        for (int k = j + 1; k < tsize; k++) {//Z
+                            int X = tmp[j] | tmp[k];
+                            int flag = 1, xsize = element[X].size();
+                            for (int z = 0; z < xsize; z++) {//A
+                                if (levelIn[X - element[X][z]] != level) {
+                                    flag = 0;
+                                    break;
+                                }
+                            }
+                            if (flag && !levelIn[X]) {
+                                tempL[th].push_back(X);
+                                levelIn[X] = next;
+                                StrippedProduct(tmp[j], tmp[k], th);
+                            }
+                        }
+                    }
+                }, tsize * (th * th) / (THREAD_NUMBER * THREAD_NUMBER),
+                   tsize * (th + 1) * (th + 1) / (THREAD_NUMBER * THREAD_NUMBER),
+                   th);
             }
+
+            for (int th = 0; th < THREAD_NUMBER; th++) {
+                t[th].join();
+            }
+
+            //for (int j = 0; j < tsize; j++) { //Y
+            //    for (int k = j + 1; k < tsize; k++) {//Z
+            //    	int X = tmp[j] | tmp[k];
+            //    	int flag = 1, xsize = element[X].size();
+            //    	for (int z = 0; z < xsize; z++) {//A
+            //    		if (levelIn[X - element[X][z]] != level) {
+            //    			flag = 0;
+            //    			break;
+            //    		}
+            //    	}
+            //    	if (flag && !levelIn[X]) {
+            //    		L[next].push_back(X);
+            //    		levelIn[X] = next;
+            //    		StrippedProduct(tmp[j], tmp[k]);
+            //    	}
+            //    }
+            //}
 
 			tmp.clear();
 			last = i;
@@ -262,8 +306,17 @@ void TANE::GenerateNextLevel(int level)
 		}
 	}
 
+    for (int i = 0; i < THREAD_NUMBER; i++) {
+        L[next].insert(
+            L[next].end(),
+            std::make_move_iterator(tempL[i].begin()),
+            std::make_move_iterator(tempL[i].end())
+        );
+    }
+
+    
 	tsize = tmp.size();
-	for (int j = 0; j < tsize; j++) { //Y
+    for (int j = 0; j < tsize; j++) { //Y
 		for (int k = j + 1; k < tsize; k++) {//Z
 			int X = tmp[j] | tmp[k];
 			int flag = 1, xsize = element[X].size();
@@ -276,15 +329,17 @@ void TANE::GenerateNextLevel(int level)
 			if (flag && !levelIn[X]) {
 				L[next].push_back(X);
 				levelIn[X] = next;
-				StrippedProduct(tmp[j], tmp[k]);
+				StrippedProduct(tmp[j], tmp[k], 0);
 			}
 		}
 	}
 
+    sort(L[next].begin(), L[next].end(), LexicoCmp());
+
 	tmp.clear();
 }
 
-void TANE::StrippedProduct(int Y, int Z)
+void TANE::StrippedProduct(int Y, int Z, int th)
 {
     int X = Y | Z;
 	if (pi[Z].size() < pi[Y].size()) swap(Y, Z);
@@ -293,30 +348,30 @@ void TANE::StrippedProduct(int Y, int Z)
 	for (int i = 0; i < ysize; i++) {
 		int suci = i + 1, size = pi[Y][i].size(); //ci
 		for (int j = 0; j < size; j++) {
-			T[pi[Y][i][j]] = suci;
+			T[th][pi[Y][i][j]] = suci;
 		}
-		S[suci].clear();
+		S[th][suci].clear();
 	}
 	for (int i = 0; i < zsize; i++) {
 		int t, size = pi[Z][i].size();
 		for (int j = 0; j < size; j++) {
 			t = pi[Z][i][j];
-			if (T[t] != 0) {
-				S[T[t]].push_back(t);
+			if (T[th][t] != 0) {
+				S[th][T[th][t]].push_back(t);
 			}
 		}
 		for (int j = 0; j < size; j++) {
 			t = pi[Z][i][j];
-			if (S[T[t]].size() >= 2) {
-				pi[X].push_back(S[T[t]]);
+			if (S[th][T[th][t]].size() >= 2) {
+				pi[X].push_back(S[th][T[th][t]]);
 			}
-			S[T[t]].clear();
+			S[th][T[th][t]].clear();
 		}
 	}
 	for (int i = 0; i < ysize; i++) {
 		int size = pi[Y][i].size();
 		for (int j = 0; j < size; j++) {
-			T[pi[Y][i][j]] = 0;
+			T[th][pi[Y][i][j]] = 0;
 		}
 	}
 }
@@ -327,19 +382,19 @@ int TANE::GetExactEValue(int X, int A)
 	int XA = X | A;
 	size = pi[XA].size();
 	for (int i = 0; i < size; i++) {
-		T[pi[XA][i][0]] = pi[XA][i].size();
+		T[0][pi[XA][i][0]] = pi[XA][i].size();
 	}
 	size = pi[X].size();
 	for (int i = 0; i < size; i++) {
 		int m = 1, csize = pi[X][i].size();
 		for (int j = 0; j < csize; j++) {
-			m = m >= T[pi[X][i][j]] ? m : T[pi[X][i][j]];
+			m = m >= T[0][pi[X][i][j]] ? m : T[0][pi[X][i][j]];
 		}
 		e = e + csize - m;
 	}
 	size = pi[XA].size();
 	for (int i = 0; i < size; i++) {
-		T[pi[XA][i][0]] = 0;
+		T[0][pi[XA][i][0]] = 0;
 	}
 
 	return e;
