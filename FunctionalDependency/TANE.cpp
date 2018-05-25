@@ -274,8 +274,8 @@ void TANE::GenerateNextLevel(int level)
                         }
                     }
                 }, tsize * (th * th) / (THREAD_NUMBER * THREAD_NUMBER),
-                   tsize * (th + 1) * (th + 1) / (THREAD_NUMBER * THREAD_NUMBER),
-                   th);
+                    tsize * (th + 1) * (th + 1) / (THREAD_NUMBER * THREAD_NUMBER),
+                    th);
             }
 
             for (int th = 0; th < THREAD_NUMBER; th++) {
@@ -284,22 +284,21 @@ void TANE::GenerateNextLevel(int level)
 
             //for (int j = 0; j < tsize; j++) { //Y
             //    for (int k = j + 1; k < tsize; k++) {//Z
-            //    	int X = tmp[j] | tmp[k];
-            //    	int flag = 1, xsize = element[X].size();
-            //    	for (int z = 0; z < xsize; z++) {//A
-            //    		if (levelIn[X - element[X][z]] != level) {
-            //    			flag = 0;
-            //    			break;
-            //    		}
-            //    	}
-            //    	if (flag && !levelIn[X]) {
-            //    		L[next].push_back(X);
-            //    		levelIn[X] = next;
-            //    		StrippedProduct(tmp[j], tmp[k]);
-            //    	}
+            //        int X = tmp[j] | tmp[k];
+            //        int flag = 1, xsize = element[X].size();
+            //        for (int z = 0; z < xsize; z++) {//A
+            //        	if (levelIn[X - element[X][z]] != level) {
+            //        		flag = 0;
+            //        		break;
+            //        	}
+            //        }
+            //        if (flag && !levelIn[X]) {
+            //        	L[next].push_back(X);
+            //        	levelIn[X] = next;
+            //        	StrippedProduct(tmp[j], tmp[k], 0);
+            //        }
             //    }
             //}
-
 			tmp.clear();
 			last = i;
 			tmp.push_back(l[last]);
@@ -307,24 +306,7 @@ void TANE::GenerateNextLevel(int level)
 	}
     
 	tsize = tmp.size();
-    //for (int j = 0; j < tsize; j++) { //Y
-	//	for (int k = j + 1; k < tsize; k++) {//Z
-	//		int X = tmp[j] | tmp[k];
-	//		int flag = 1, xsize = element[X].size();
-	//		for (int z = 0; z < xsize; z++) {//A
-	//			if (levelIn[X - element[X][z]] != level) {
-	//				flag = 0;
-	//				break;
-	//			}
-	//		}
-	//		if (flag && !levelIn[X]) {
-	//			L[next].push_back(X);
-	//			levelIn[X] = next;
-	//			StrippedProduct(tmp[j], tmp[k], 0);
-	//		}
-	//	}
-	//}
-
+    
     for (int th = 0; th < THREAD_NUMBER; th++) {
         t[th] = thread([&, this](int st, int ed, int th) {
             for (int j = st; j < ed; j++) { //Y
