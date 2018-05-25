@@ -111,7 +111,7 @@ void TANE::GetFunctionDependence()
 	}
 	StrippedInit();
 	while (!L[level].empty()) {
-        cout << level << " " << L[level].size() << endl;
+        //cout << level << " " << L[level].size() << endl;
 		//st = clock();
 		ComputeDependencies(level);
 		Prune(level);

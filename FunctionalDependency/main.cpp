@@ -13,12 +13,13 @@ int main() {
 	st = clock();
     // filePath = "data.txt";
     readFromFile(filePath, table);
-	cout << "start" << endl;
+    
+	cout << "Read finished, start TANE." << endl;
 	TANE tane;
 	tane.GetFunctionDependence();
 	tane.OutputFD();
 	ed = clock();
-	cout << (ed - st) * 1.0 / CLOCKS_PER_SEC << endl;
+	cout << "Time cost: " << (ed - st) * 1.0 / CLOCKS_PER_SEC << endl;
     system("pause");
     return 0;
 }

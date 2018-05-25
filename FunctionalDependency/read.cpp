@@ -1,8 +1,13 @@
 #include "io_func.h"
 
 #include <iostream>
+#include <thread>
+#include <shared_mutex>
+#include <mutex>
 #include <fstream>
 #include <ctime>
+
+#define THREAD_NUMBER 4
 
 using namespace std;
 
@@ -31,22 +36,44 @@ void readFromFile(string filePath, vector<vector<string>> &table, bool isClear) 
 
     ifstream fileIn;
     fileIn.open(filePath, ios::in);
-    if (!fileIn.is_open()){
+    if (!fileIn.is_open()) {
         cout << "File open failed!" << endl;
         exit(1);
     }
 
-    vector<string> res(20);
-    string s;
-    char buffer[512];
+    thread t[THREAD_NUMBER];
+    vector<string> res[THREAD_NUMBER];
+    for (int i = 0; i < THREAD_NUMBER; i++) {
+        res[i] = vector<string>(20);
+    }
+    
+    string s[THREAD_NUMBER];
+    char buffer[THREAD_NUMBER][512];
 
-    while (!fileIn.eof()) {
-        fileIn.getline(buffer, 500);
-        s = string(buffer);
-        if (s == "")
-            continue;
-        specialSplit(res, s);
-        table.push_back(res);
+    shared_mutex m;
+
+    for (int th = 0; th < THREAD_NUMBER; th++) {
+        t[th] = thread([&](int th) {
+            while (!fileIn.eof()) {
+                unique_lock<shared_mutex> write(m);
+                fileIn.getline(buffer[th], 500);
+
+                s[th] = string(buffer[th]);
+                if (s[th] == "") {
+                    write.unlock();
+                    continue;
+                }
+                specialSplit(res[th], s[th]);
+                
+                
+                table.push_back(res[th]);
+                write.unlock();
+            }
+        }, th);
+    }
+
+    for (int th = 0; th < THREAD_NUMBER; th++) {
+        t[th].join();
     }
     
     fileIn.close();
