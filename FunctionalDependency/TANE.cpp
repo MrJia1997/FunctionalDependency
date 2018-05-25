@@ -309,8 +309,8 @@ void TANE::GenerateNextLevel(int level)
     for (int i = 0; i < THREAD_NUMBER; i++) {
         L[next].insert(
             L[next].end(),
-            std::make_move_iterator(tempL[i].begin()),
-            std::make_move_iterator(tempL[i].end())
+            make_move_iterator(tempL[i].begin()),
+            make_move_iterator(tempL[i].end())
         );
     }
 

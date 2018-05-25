@@ -8,10 +8,10 @@ vector<vector<string>> table(100000);
 int main() {
     string filePath;
 	clock_t st, ed;
-    //cout << "Please input data file path: ";
-    //cin >> filePath;
+    cout << "Please input data file path: ";
+    cin >> filePath;
 	st = clock();
-	filePath = "data.txt";
+    // filePath = "data.txt";
     readFromFile(filePath, table);
 	cout << "start" << endl;
 	TANE tane;
